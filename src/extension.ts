@@ -16,7 +16,7 @@ import { PALETTE } from './colors';
 export function activate(context: vscode.ExtensionContext): void {
   const store = new ProjectStore(context);
   const sessions = new SessionManager(context);
-  const decorations = new ProjectDecorationProvider(store, sessions);
+  const decorations = new ProjectDecorationProvider(store);
   const filesProvider = new FilesTreeProvider(store);
   context.subscriptions.push(store, sessions, decorations, filesProvider);
 
@@ -79,7 +79,7 @@ export function activate(context: vscode.ExtensionContext): void {
   async function setColor(project: Project): Promise<void> {
     type ColorPick = vscode.QuickPickItem & { colorId: string | undefined };
     const items: ColorPick[] = PALETTE.map((c) => ({
-      label: c.label,
+      label: `${c.emoji} ${c.label}`,
       description: project.color === c.id ? '目前' : undefined,
       colorId: c.id,
     }));

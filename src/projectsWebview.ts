@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { randomUUID } from 'crypto';
 import type { ProjectStore } from './projectStore';
 import type { SessionManager } from './sessionManager';
-import { resolveColorId } from './colors';
+import { resolveColorId, emojiFor } from './colors';
 
 export interface WebviewActions {
   addProject(): void;
@@ -98,6 +98,7 @@ export class ProjectsWebviewProvider
       name: p.name,
       path: p.path,
       colorVar: cssVar(resolveColorId(p)),
+      emoji: emojiFor(p),
       active: p.id === activeId,
       sessions: this.sessions.getSessions(p.id).map((s) => ({
         id: s.id,
@@ -174,12 +175,10 @@ export class ProjectsWebviewProvider
   }
   .card-header .name { cursor: pointer; }
   .dot {
-    width: 9px; height: 9px;
-    border-radius: 50%;
-    background: var(--c);
     flex: 0 0 auto;
+    font-size: 0.85em;
+    line-height: 1;
   }
-  .card:not(.active) .dot { background: transparent; border: 1.5px solid var(--c); }
   .name { font-weight: 600; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .badge {
     flex: 0 0 auto;
@@ -264,6 +263,7 @@ export class ProjectsWebviewProvider
     const header = document.createElement('div');
     header.className = 'card-header';
     const dot = document.createElement('span'); dot.className = 'dot';
+    dot.textContent = p.emoji || '';
     const name = document.createElement('span'); name.className = 'name';
     name.textContent = p.name; name.title = p.path;
     name.addEventListener('click', () => send('openProject', p.id));
