@@ -12,7 +12,9 @@ Activity Bar 最左側新增一個容器，內含兩個面板：
 ## 功能
 
 - **專案 = 色塊卡片**：跨視窗持久化（存在 globalState），背景色塊 + 分隔線快速辨識；每個專案一個顏色。
-- **terminal 群組**：每個專案的 terminal 集中在卡片內，名稱標出 cwd（如 `my-app: src`），一鍵開啟 / 聚焦 / 關閉。
+- **terminal 群組**：每個專案的 terminal 集中在卡片內，一鍵開啟 / 聚焦 / 關閉。
+  - **顯示執行中的指令**：跑 `claude` / `codex` 等時，卡片內該 terminal 的標籤會變成指令名稱（cwd 退為灰字），結束後還原。需 VSCode shell integration 啟用（bash/zsh/pwsh/fish 預設開）。
+  - **分頁色帶**：原生終端機分頁名稱前帶該專案的 emoji 色圓點（如 `🔵 my-app: src`）+ 圖示染色，標示所屬群組。
 - **檔案瀏覽**：Files 面板是當前專案的檔案樹，點檔開檔；任何資料夾 hover 可「在此開 terminal」（cwd 設在該子目錄）。
 - **切換即聚焦**：點專案卡片會把它的資料夾掛進 multi-root workspace、在 Explorer 聚焦該根、帶出最近一個 terminal，Files 面板也切到該專案。
 - **自選顏色**：設定專案顏色（卡片動作按鈕或指令），六色調色盤 🔴🟠🟡🟢🔵🟣，或改回「自動」依名稱配色。

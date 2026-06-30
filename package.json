@@ -6,7 +6,7 @@
   "publisher": "casper",
   "license": "MIT",
   "engines": {
-    "vscode": "^1.85.0"
+    "vscode": "^1.93.0"
   },
   "categories": [
     "Other"
@@ -148,7 +148,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
-    "@types/vscode": "^1.85.0",
+    "@types/vscode": "^1.93.0",
     "@vscode/vsce": "^2.24.0",
     "esbuild": "^0.20.2",
     "typescript": "^5.4.5"

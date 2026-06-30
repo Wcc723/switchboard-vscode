@@ -2,18 +2,30 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
 import type { Project } from './projectStore';
-import { themeColorFor } from './colors';
+import { themeColorFor, emojiFor } from './colors';
 
 export interface Session {
   id: string;
   projectId: string;
   /** Absolute cwd of the terminal (project root, or a subdirectory). */
   cwd: string;
-  /** Full name shown on the native terminal tab, e.g. "my-app: src". */
+  /** Full name shown on the native terminal tab, e.g. "🔵 my-app: src". */
   name: string;
-  /** Short label shown in our tree under the project, e.g. "src" or "~". */
+  /** Short label shown in our panel under the project, e.g. "src" or "~". */
   treeLabel: string;
+  /** The command currently running (via shell integration), e.g. "claude". */
+  runningCommand?: string;
   terminal: vscode.Terminal;
+}
+
+/** First real command word of a command line, e.g. "claude --resume" -> "claude". */
+function firstCommandWord(commandLine: string): string | undefined {
+  const tokens = commandLine.trim().split(/\s+/);
+  const cmd = tokens.find((t) => t.length > 0 && !/^\w+=/.test(t));
+  if (!cmd) {
+    return undefined;
+  }
+  return cmd.split(/[\\/]/).pop() || cmd;
 }
 
 /**
@@ -28,7 +40,23 @@ export class SessionManager implements vscode.Disposable {
 
   constructor(context: vscode.ExtensionContext) {
     context.subscriptions.push(
-      vscode.window.onDidCloseTerminal((t) => this.handleTerminalClosed(t))
+      vscode.window.onDidCloseTerminal((t) => this.handleTerminalClosed(t)),
+      // Reflect the running command (claude, codex, ...) in the panel label.
+      vscode.window.onDidStartTerminalShellExecution((e) => {
+        const session = this.findSessionByTerminal(e.terminal);
+        const cmd = firstCommandWord(e.execution.commandLine.value);
+        if (session && cmd) {
+          session.runningCommand = cmd;
+          this._onDidChange.fire();
+        }
+      }),
+      vscode.window.onDidEndTerminalShellExecution((e) => {
+        const session = this.findSessionByTerminal(e.terminal);
+        if (session && session.runningCommand !== undefined) {
+          session.runningCommand = undefined;
+          this._onDidChange.fire();
+        }
+      })
     );
   }
 
@@ -49,7 +77,8 @@ export class SessionManager implements vscode.Disposable {
     const sameCwd = existing.filter((s) => s.cwd === folder).length;
     const suffix = sameCwd > 0 ? ` #${sameCwd + 1}` : '';
     const treeLabel = `${rel}${suffix}`;
-    const name = `${project.name}: ${treeLabel}`;
+    // Emoji prefix acts as a colour marker for the group in the native tab.
+    const name = `${emojiFor(project)} ${project.name}: ${treeLabel}`;
 
     const color = themeColorFor(project);
     const terminal = vscode.window.createTerminal({

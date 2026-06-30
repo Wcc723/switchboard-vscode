@@ -104,6 +104,7 @@ export class ProjectsWebviewProvider
         id: s.id,
         label: s.treeLabel,
         cwd: s.cwd,
+        running: s.runningCommand,
       })),
     }));
     void this.view.webview.postMessage({ type: 'state', projects });
@@ -212,7 +213,9 @@ export class ProjectsWebviewProvider
   }
   .session:hover { background: var(--vscode-list-hoverBackground); }
   .sdot { width: 6px; height: 6px; border-radius: 50%; background: var(--c); flex: 0 0 auto; }
-  .slabel { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .slabel { flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .running { font-weight: 600; }
+  .scwd { flex: 1 1 auto; opacity: 0.6; font-size: 0.85em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .sclose { opacity: 0; }
   .session:hover .sclose { opacity: 1; }
 </style>
@@ -248,10 +251,20 @@ export class ProjectsWebviewProvider
     row.addEventListener('click', () => send('focusSession', s.id));
     const dot = document.createElement('span'); dot.className = 'sdot';
     const lbl = document.createElement('span'); lbl.className = 'slabel';
-    lbl.textContent = s.label; lbl.title = s.cwd;
+    // Show the running command (claude / codex / ...) when known, with the
+    // cwd kept as a muted suffix; otherwise just the cwd.
+    lbl.textContent = s.running || s.label;
+    if (s.running) lbl.classList.add('running');
+    lbl.title = s.cwd;
     const close = iconBtn('✕', '關閉 terminal', (ev) => { ev.stopPropagation(); send('closeSession', s.id); });
     close.className = 'icon sclose';
-    row.append(dot, lbl, close);
+    row.append(dot, lbl);
+    if (s.running) {
+      const cwd = document.createElement('span'); cwd.className = 'scwd';
+      cwd.textContent = s.label; cwd.title = s.cwd;
+      row.append(cwd);
+    }
+    row.append(close);
     return row;
   }
 
