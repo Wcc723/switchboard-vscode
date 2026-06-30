@@ -1,6 +1,6 @@
 {
-  "name": "switchboard",
-  "displayName": "Switchboard",
+  "name": "termdeck",
+  "displayName": "TermDeck",
   "description": "在單一 VSCode 視窗中跨專案管理多個終端機（Claude / Codex 等 session）的控制台",
   "version": "0.0.1",
   "icon": "media/icon.png",
@@ -44,7 +44,7 @@
       "activitybar": [
         {
           "id": "projectSwitch",
-          "title": "Switchboard",
+          "title": "TermDeck",
           "icon": "media/projects.svg"
         }
       ]
@@ -72,42 +72,42 @@
       {
         "command": "projectSwitch.addProject",
         "title": "新增專案",
-        "category": "Switchboard",
+        "category": "TermDeck",
         "icon": "$(add)"
       },
       {
         "command": "projectSwitch.refresh",
         "title": "重新整理",
-        "category": "Switchboard",
+        "category": "TermDeck",
         "icon": "$(refresh)"
       },
       {
         "command": "projectSwitch.newSession",
         "title": "開新 terminal",
-        "category": "Switchboard",
+        "category": "TermDeck",
         "icon": "$(add)"
       },
       {
         "command": "projectSwitch.openTerminalHere",
         "title": "在此資料夾開 terminal",
-        "category": "Switchboard",
+        "category": "TermDeck",
         "icon": "$(terminal)"
       },
       {
         "command": "projectSwitch.setColor",
         "title": "設定專案顏色",
-        "category": "Switchboard",
+        "category": "TermDeck",
         "icon": "$(symbol-color)"
       },
       {
         "command": "projectSwitch.renameProject",
         "title": "重新命名專案",
-        "category": "Switchboard"
+        "category": "TermDeck"
       },
       {
         "command": "projectSwitch.removeProject",
         "title": "移除專案",
-        "category": "Switchboard"
+        "category": "TermDeck"
       }
     ],
     "menus": {
@@ -132,7 +132,7 @@
       ]
     },
     "configuration": {
-      "title": "Switchboard",
+      "title": "TermDeck",
       "properties": {
         "projectSwitch.onProjectClick": {
           "type": "string",

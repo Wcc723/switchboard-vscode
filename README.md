@@ -1,4 +1,4 @@
-# Switchboard
+# TermDeck
 
 在同一個 VSCode 視窗裡跨專案管理多個終端機（Claude / Codex 等 session）——一個專案 × 多個終端機的控制台。
 
