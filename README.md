@@ -2,6 +2,8 @@
 
 在同一個 VSCode 視窗裡跨專案管理多個終端機（Claude / Codex 等 session）——一個專案 × 多個終端機的控制台。
 
+![TermDeck 畫面：左側 Projects 面板管理各專案的 terminal 群組，FILES 以專案色點標示檔案，底部狀態列顯示當前 terminal 所屬的專案](media/screenshot.png)
+
 Activity Bar 最左側新增一個容器，內含兩個面板：
 
 - **Projects**（webview）：每個專案是一張**色塊卡片**（左側色條 + 淡底色），卡片間有**分隔線**；卡片標題顯示狀態（當前高亮、實心圓點、terminal 數徽章）與動作按鈕（＋ terminal、🎨 顏色、✎ 改名、🗑 移除），底下是該專案的 terminal 群組。
