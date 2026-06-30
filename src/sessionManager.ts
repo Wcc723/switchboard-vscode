@@ -80,6 +80,16 @@ export class SessionManager implements vscode.Disposable {
     session.terminal.show();
   }
 
+  findSessionById(id: string): Session | undefined {
+    for (const list of this.sessions.values()) {
+      const found = list.find((s) => s.id === id);
+      if (found) {
+        return found;
+      }
+    }
+    return undefined;
+  }
+
   /** Find the tracked session backing a given terminal, if any. */
   findSessionByTerminal(terminal: vscode.Terminal): Session | undefined {
     for (const list of this.sessions.values()) {

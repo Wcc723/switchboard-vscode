@@ -1,74 +1,36 @@
 import * as vscode from 'vscode';
 import { ProjectStore, type Project } from './projectStore';
 import { SessionManager } from './sessionManager';
+import { FilesTreeProvider, FileNode } from './filesTree';
+import { ProjectDecorationProvider } from './fileDecorations';
 import {
-  ProjectsTreeProvider,
-  ProjectNode,
-  CategoryNode,
-  SessionNode,
-  FileNode,
-} from './projectsTree';
+  ProjectsWebviewProvider,
+  type WebviewActions,
+} from './projectsWebview';
 import {
   ensureFolderInWorkspace,
   removeFolderFromWorkspace,
 } from './workspaceFolders';
 import { PALETTE } from './colors';
-import { ProjectDecorationProvider } from './fileDecorations';
 
 export function activate(context: vscode.ExtensionContext): void {
   const store = new ProjectStore(context);
   const sessions = new SessionManager(context);
-  const tree = new ProjectsTreeProvider(store, sessions);
   const decorations = new ProjectDecorationProvider(store, sessions);
-  context.subscriptions.push(store, sessions, tree, decorations);
-  context.subscriptions.push(
-    vscode.window.registerFileDecorationProvider(decorations)
-  );
+  const filesProvider = new FilesTreeProvider(store);
+  context.subscriptions.push(store, sessions, decorations, filesProvider);
 
   context.subscriptions.push(
-    vscode.window.createTreeView('projectSwitch.projects', {
-      treeDataProvider: tree,
+    vscode.window.registerFileDecorationProvider(decorations),
+    vscode.window.createTreeView('projectSwitch.files', {
+      treeDataProvider: filesProvider,
       showCollapseAll: true,
     })
   );
 
-  // Integrate with the native terminal list: focusing one of our terminals
-  // (anywhere) marks its project active, so the panel expands/highlights it.
-  context.subscriptions.push(
-    vscode.window.onDidChangeActiveTerminal((terminal) => {
-      if (!terminal) {
-        return;
-      }
-      const session = sessions.findSessionByTerminal(terminal);
-      if (session) {
-        store.setActive(session.projectId);
-      }
-    })
-  );
+  // --- Actions (shared by the webview and the command palette) ---------------
 
-  /** Resolve the target project from a command argument (tree node) or via quick pick. */
-  const resolveProject = async (arg: unknown): Promise<Project | undefined> => {
-    if (arg instanceof ProjectNode || arg instanceof CategoryNode || arg instanceof FileNode) {
-      return arg.project;
-    }
-    if (arg instanceof SessionNode) {
-      return store.getProject(arg.session.projectId);
-    }
-    const projects = store.getProjects();
-    if (projects.length === 0) {
-      return undefined;
-    }
-    const picked = await vscode.window.showQuickPick(
-      projects.map((p) => ({ label: p.name, description: p.path, id: p.id })),
-      { placeHolder: '選擇專案' }
-    );
-    return picked ? store.getProject(picked.id) : undefined;
-  };
-
-  const register = (id: string, fn: (...args: any[]) => unknown) =>
-    context.subscriptions.push(vscode.commands.registerCommand(id, fn));
-
-  register('projectSwitch.addProject', async () => {
+  async function addProject(): Promise<void> {
     const uris = await vscode.window.showOpenDialog({
       canSelectFolders: true,
       canSelectFiles: false,
@@ -83,13 +45,9 @@ export function activate(context: vscode.ExtensionContext): void {
       const project = await store.addProject(uri.fsPath);
       ensureFolderInWorkspace(project.path);
     }
-  });
+  }
 
-  register('projectSwitch.openProject', async (arg: unknown) => {
-    const project = await resolveProject(arg);
-    if (!project) {
-      return;
-    }
+  async function openProject(project: Project): Promise<void> {
     store.setActive(project.id);
     ensureFolderInWorkspace(project.path);
     try {
@@ -100,7 +58,6 @@ export function activate(context: vscode.ExtensionContext): void {
     } catch {
       // Explorer may be unavailable; ignore.
     }
-
     const mode = vscode.workspace
       .getConfiguration('projectSwitch')
       .get<string>('onProjectClick', 'focusOrStartSession');
@@ -111,43 +68,15 @@ export function activate(context: vscode.ExtensionContext): void {
     } else {
       sessions.focusOrCreate(project);
     }
-  });
+  }
 
-  register('projectSwitch.newSession', async (arg: unknown) => {
-    const project = await resolveProject(arg);
-    if (!project) {
-      return;
-    }
+  function newSession(project: Project, cwd?: string): void {
     store.setActive(project.id);
     ensureFolderInWorkspace(project.path);
-    sessions.createSession(project);
-  });
+    sessions.createSession(project, cwd);
+  }
 
-  register('projectSwitch.openTerminalHere', (arg: unknown) => {
-    if (arg instanceof FileNode && arg.fileType === vscode.FileType.Directory) {
-      store.setActive(arg.project.id);
-      ensureFolderInWorkspace(arg.project.path);
-      sessions.createSession(arg.project, arg.uri.fsPath);
-    }
-  });
-
-  register('projectSwitch.focusSession', (arg: unknown) => {
-    if (arg instanceof SessionNode) {
-      sessions.focusSession(arg.session);
-    }
-  });
-
-  register('projectSwitch.closeSession', (arg: unknown) => {
-    if (arg instanceof SessionNode) {
-      sessions.closeSession(arg.session);
-    }
-  });
-
-  register('projectSwitch.setColor', async (arg: unknown) => {
-    const project = await resolveProject(arg);
-    if (!project) {
-      return;
-    }
+  async function setColor(project: Project): Promise<void> {
     type ColorPick = vscode.QuickPickItem & { colorId: string | undefined };
     const items: ColorPick[] = PALETTE.map((c) => ({
       label: c.label,
@@ -165,13 +94,9 @@ export function activate(context: vscode.ExtensionContext): void {
     if (picked) {
       await store.setColor(project.id, picked.colorId);
     }
-  });
+  }
 
-  register('projectSwitch.renameProject', async (arg: unknown) => {
-    const project = await resolveProject(arg);
-    if (!project) {
-      return;
-    }
+  async function renameProject(project: Project): Promise<void> {
     const name = await vscode.window.showInputBox({
       prompt: '專案名稱',
       value: project.name,
@@ -179,18 +104,12 @@ export function activate(context: vscode.ExtensionContext): void {
     if (name?.trim()) {
       await store.renameProject(project.id, name.trim());
     }
-  });
+  }
 
-  register('projectSwitch.removeProject', async (arg: unknown) => {
-    const project = await resolveProject(arg);
-    if (!project) {
-      return;
-    }
-    const sessionCount = sessions.getSessions(project.id).length;
+  async function removeProject(project: Project): Promise<void> {
+    const count = sessions.getSessions(project.id).length;
     const detail =
-      sessionCount > 0
-        ? `這會關閉 ${sessionCount} 個正在執行的 terminal。`
-        : undefined;
+      count > 0 ? `這會關閉 ${count} 個正在執行的 terminal。` : undefined;
     const confirm = await vscode.window.showWarningMessage(
       `從清單移除「${project.name}」？`,
       { modal: true, detail },
@@ -202,9 +121,111 @@ export function activate(context: vscode.ExtensionContext): void {
     sessions.closeProjectSessions(project.id);
     removeFolderFromWorkspace(project.path);
     await store.removeProject(project.id);
+  }
+
+  const byId = (id: string): Project | undefined => store.getProject(id);
+
+  const actions: WebviewActions = {
+    addProject: () => void addProject(),
+    openProject: (id) => {
+      const p = byId(id);
+      if (p) void openProject(p);
+    },
+    newSession: (id) => {
+      const p = byId(id);
+      if (p) newSession(p);
+    },
+    focusSession: (id) => {
+      const s = sessions.findSessionById(id);
+      if (s) sessions.focusSession(s);
+    },
+    closeSession: (id) => {
+      const s = sessions.findSessionById(id);
+      if (s) sessions.closeSession(s);
+    },
+    setColor: (id) => {
+      const p = byId(id);
+      if (p) void setColor(p);
+    },
+    renameProject: (id) => {
+      const p = byId(id);
+      if (p) void renameProject(p);
+    },
+    removeProject: (id) => {
+      const p = byId(id);
+      if (p) void removeProject(p);
+    },
+  };
+
+  context.subscriptions.push(
+    vscode.window.registerWebviewViewProvider(
+      ProjectsWebviewProvider.viewType,
+      new ProjectsWebviewProvider(store, sessions, actions),
+      { webviewOptions: { retainContextWhenHidden: true } }
+    )
+  );
+
+  // Integrate with the native terminal list: focusing one of our terminals
+  // (anywhere) marks its project active, so the panel highlights it.
+  context.subscriptions.push(
+    vscode.window.onDidChangeActiveTerminal((terminal) => {
+      if (!terminal) {
+        return;
+      }
+      const session = sessions.findSessionByTerminal(terminal);
+      if (session) {
+        store.setActive(session.projectId);
+      }
+    })
+  );
+
+  // --- Commands (palette + FILES tree menus) ---------------------------------
+
+  const pickProject = async (): Promise<Project | undefined> => {
+    const projects = store.getProjects();
+    if (projects.length === 0) {
+      return undefined;
+    }
+    const picked = await vscode.window.showQuickPick(
+      projects.map((p) => ({ label: p.name, description: p.path, id: p.id })),
+      { placeHolder: '選擇專案' }
+    );
+    return picked ? byId(picked.id) : undefined;
+  };
+
+  const register = (id: string, fn: (...args: any[]) => unknown) =>
+    context.subscriptions.push(vscode.commands.registerCommand(id, fn));
+
+  register('projectSwitch.addProject', () => addProject());
+  register('projectSwitch.refresh', () => filesProvider.refresh());
+
+  register('projectSwitch.openTerminalHere', (arg: unknown) => {
+    if (!(arg instanceof FileNode) || arg.fileType !== vscode.FileType.Directory) {
+      return;
+    }
+    const id = store.activeProjectId;
+    const project = id ? byId(id) : undefined;
+    if (project) {
+      newSession(project, arg.uri.fsPath);
+    }
   });
 
-  register('projectSwitch.refresh', () => tree.refresh());
+  register('projectSwitch.newSession', async () => {
+    const project = await pickProject();
+    if (project) newSession(project);
+  });
+  register('projectSwitch.setColor', async () => {
+    const project = await pickProject();
+    if (project) await setColor(project);
+  });
+  register('projectSwitch.renameProject', async () => {
+    const project = await pickProject();
+    if (project) await renameProject(project);
+  });
+  register('projectSwitch.removeProject', async () => {
+    const project = await pickProject();
+    if (project) await removeProject(project);
+  });
 }
 
 export function deactivate(): void {

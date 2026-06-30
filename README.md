@@ -2,16 +2,19 @@
 
 在同一個 VSCode 視窗裡管理多個專案，以及每個專案的多個 Claude Code session。
 
-Activity Bar 最左側新增一個 **Projects** 面板：列出你註冊的專案（= 群組），每個專案底下是它的一組 terminal（cwd 設在該專案的整合終端機，可選擇自動跑 `claude`）。**切換專案時會展開該專案的 terminal 群組、收合其他專案**；每個專案有自己的顏色，連原生終端機列表也能一眼分辨。切換只是聚焦，不會 reload 視窗，所以**所有 terminal 全程不中斷**。
+Activity Bar 最左側新增一個容器，內含兩個面板：
 
-每個專案底下分成兩區：**TERMINALS**（該專案所有 terminal，集中且名稱標出 cwd）與 **FILES**（檔案瀏覽 / 開檔，任何資料夾都能就地開一個 cwd 在該處的 terminal）。
+- **Projects**（webview）：每個專案是一張**色塊卡片**（左側色條 + 淡底色），卡片間有**分隔線**；卡片標題顯示狀態（當前高亮、實心圓點、terminal 數徽章）與動作按鈕（＋ terminal、🎨 顏色、✎ 改名、🗑 移除），底下是該專案的 terminal 群組。
+- **Files**（原生樹）：顯示**當前專案**的檔案樹，保留 VSCode 原生檔案圖示；點檔開檔，任何資料夾可「在此開 terminal」。
+
+切換專案只是聚焦，不會 reload 視窗，所以**所有 terminal 全程不中斷**。
 
 ## 功能
 
-- **專案 = 群組**：跨視窗持久化（存在 globalState），每個專案一個顏色。
-- **terminal 群組**：每個專案的 terminal 集中在 TERMINALS 區，名稱標出 cwd（如 `my-app: src`），一鍵開啟 / 聚焦 / 關閉。
-- **檔案瀏覽**：FILES 區是當前專案的檔案樹，點檔開檔；任何資料夾 hover 可「在此開 terminal」（cwd 設在該子目錄）。
-- **切換即展開群組**：點專案會把它的資料夾掛進 multi-root workspace、在 Explorer 聚焦該根、展開它的群組並帶出最近一個 terminal。
+- **專案 = 色塊卡片**：跨視窗持久化（存在 globalState），背景色塊 + 分隔線快速辨識；每個專案一個顏色。
+- **terminal 群組**：每個專案的 terminal 集中在卡片內，名稱標出 cwd（如 `my-app: src`），一鍵開啟 / 聚焦 / 關閉。
+- **檔案瀏覽**：Files 面板是當前專案的檔案樹，點檔開檔；任何資料夾 hover 可「在此開 terminal」（cwd 設在該子目錄）。
+- **切換即聚焦**：點專案卡片會把它的資料夾掛進 multi-root workspace、在 Explorer 聚焦該根、帶出最近一個 terminal，Files 面板也切到該專案。
 - **自選顏色**：右鍵專案 → 設定專案顏色，從調色盤挑（或改回「自動」依名稱配色）。
 - **檔案依專案染色**：每個專案底下的檔案會以該專案顏色標示（FILES 樹、原生 Explorer、編輯器分頁都會），一眼分辨檔案屬於哪個專案；專案列右側徽章顯示 terminal 數量。
   - 編輯器分頁要看到顏色，請開啟設定 `workbench.editor.decorations.colors: true`。
@@ -32,8 +35,10 @@ npm run watch     # esbuild 監看；或 npm run build 做一次性建置
 
 型別檢查：`npm run compile`。打包：`npm run package`（產生 `.vsix`，可用 `code --install-extension *.vsix` 安裝）。
 
-## 範圍說明
+## 架構說明
 
-v1 聚焦在「多專案 × 多 Claude session 的駕駛艙」。檔案瀏覽沿用 VSCode 原生 multi-root Explorer。
+Projects 面板用 **webview** 自繪（背景色塊、分隔線、terminal 群組是原生 TreeView 做不到的）；Files 面板維持**原生 TreeView**（保留檔案圖示主題與專案染色）。兩者透過 message / 共用 actions 串接。
 
-未納入（future）：只顯示當前專案的自訂檔案樹、專案配色、`claude --resume` 自動還原、session running/idle 狀態細分。
+已知限制：VSCode 不允許改「已開啟」terminal 的原生分頁顏色，故換色時面板即時更新、但已開的原生分頁維持原色（新開的才用新色）。
+
+未納入（future）：`claude --resume` 自動還原、terminal running/idle 狀態細分、卡片拖曳排序。
