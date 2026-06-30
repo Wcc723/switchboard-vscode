@@ -207,29 +207,32 @@ export class ProjectsWebviewProvider
   button.icon:hover { background: var(--vscode-toolbar-hoverBackground, rgba(128,128,128,0.18)); }
   button.icon .codicon { font-size: 15px; }
 
-  .sessions { margin: 6px 0 1px; display: flex; flex-direction: column; gap: 1px; }
+  .sessions { margin: 5px 0 1px; display: flex; flex-direction: column; gap: 2px; }
   .session {
-    display: flex; align-items: center; gap: 6px;
-    padding: 3px 3px 3px 6px;
-    border-radius: 4px;
+    display: flex; align-items: center; gap: 7px;
+    padding: 4px 5px 4px 7px;
+    border-radius: 5px;
     cursor: pointer;
-    opacity: 0.5;
-    transition: opacity 0.1s ease, background 0.1s ease;
+    color: var(--vscode-descriptionForeground);
+    transition: background 0.12s ease, color 0.12s ease;
   }
-  .session:hover { opacity: 0.85; background: var(--vscode-list-hoverBackground); }
+  .session:hover { background: var(--vscode-list-hoverBackground); color: var(--vscode-foreground); }
   .session.active {
-    opacity: 1;
-    background: transparent;
-    border-radius: 0;
-    box-shadow: inset 2px 0 0 var(--c);
+    color: var(--vscode-foreground);
+    background: var(--vscode-list-inactiveSelectionBackground);
   }
   .session.active:hover { background: var(--vscode-list-hoverBackground); }
-  .sdot { width: 6px; height: 6px; border-radius: 50%; background: var(--c); flex: 0 0 auto; }
+  .sdot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--c); flex: 0 0 auto;
+    opacity: 0.4; transition: opacity 0.12s ease;
+  }
+  .session:hover .sdot, .session.active .sdot { opacity: 1; }
   .smain { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 6px; }
-  .srun { font-size: 12px; flex: 0 0 auto; opacity: 0.8; }
+  .srun { font-size: 12px; flex: 0 0 auto; }
   .slabel { flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .session.active .slabel { font-weight: 600; }
-  .scwd { flex: 0 1 auto; opacity: 0.6; font-size: 0.85em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .scwd { flex: 0 1 auto; opacity: 0.7; font-size: 0.85em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .sclose { flex: 0 0 auto; opacity: 0; width: 20px; height: 20px; }
   .session:hover .sclose { opacity: 0.85; }
 </style>
