@@ -1,0 +1,28 @@
+# Changelog
+
+本擴充的所有重要變更都會記錄於此檔。
+
+格式依循 [Keep a Changelog](https://keepachangelog.com/zh-TW/1.1.0/)，版本遵循 [語意化版本](https://semver.org/lang/zh-TW/)。
+
+## [0.0.2] - 2026-06-30
+
+### 新增
+- README / Marketplace 說明頁加入實際使用截圖。
+- 新增本 CHANGELOG。
+
+## [0.0.1] - 2026-06-30
+
+首次發布。
+
+### 功能
+- **Projects 面板（webview）**：每個專案一張色塊卡片（左色條 + 淡底色 + 分隔），標題顯示狀態（當前高亮、terminal 數）與動作（開 terminal / 設色 / 改名 / 移除）。
+- **terminal 群組**：每個專案集中管理多個 terminal，cwd 可設在任意子目錄；透過 shell integration 顯示執行中的指令（如 `claude` / `codex`）。
+- **Files 面板**：顯示當前專案的檔案樹（保留原生檔案圖示）；檔案以該專案的顏色圓點標示（Files 樹 / 原生 Explorer / 編輯器分頁），不改變文字顏色。
+- **專案色彩**：六色調色盤可自選或自動配色，一致套用於卡片、terminal 分頁與檔案圓點。
+- **狀態列指示器**：顯示當前聚焦 terminal 所屬的專案與執行中指令。
+- **與原生終端機列表連動**：在原生分頁點選 terminal 時，面板會自動高亮其所屬專案。
+- **單一視窗、多專案**：以 multi-root workspace 動態掛載專案，切換不 reload，所有 terminal 全程不中斷。
+- **可設定行為**：`projectSwitch.onProjectClick`、`projectSwitch.autoStartClaude`、`projectSwitch.claudeCommand`。
+
+### 安全性
+- `projectSwitch.claudeCommand` 設為 machine scope，避免惡意 workspace 透過 `.vscode/settings.json` 注入並自動執行指令；並宣告 untrusted workspace 支援。
