@@ -12,6 +12,7 @@ import {
   ensureFolderInWorkspace,
   removeFolderFromWorkspace,
 } from './workspaceFolders';
+import { PALETTE } from './colors';
 
 export function activate(context: vscode.ExtensionContext): void {
   const store = new ProjectStore(context);
@@ -23,6 +24,20 @@ export function activate(context: vscode.ExtensionContext): void {
     vscode.window.createTreeView('projectSwitch.projects', {
       treeDataProvider: tree,
       showCollapseAll: true,
+    })
+  );
+
+  // Integrate with the native terminal list: focusing one of our terminals
+  // (anywhere) marks its project active, so the panel expands/highlights it.
+  context.subscriptions.push(
+    vscode.window.onDidChangeActiveTerminal((terminal) => {
+      if (!terminal) {
+        return;
+      }
+      const session = sessions.findSessionByTerminal(terminal);
+      if (session) {
+        store.setActive(session.projectId);
+      }
     })
   );
 
@@ -120,6 +135,30 @@ export function activate(context: vscode.ExtensionContext): void {
   register('projectSwitch.closeSession', (arg: unknown) => {
     if (arg instanceof SessionNode) {
       sessions.closeSession(arg.session);
+    }
+  });
+
+  register('projectSwitch.setColor', async (arg: unknown) => {
+    const project = await resolveProject(arg);
+    if (!project) {
+      return;
+    }
+    type ColorPick = vscode.QuickPickItem & { colorId: string | undefined };
+    const items: ColorPick[] = PALETTE.map((c) => ({
+      label: c.label,
+      description: project.color === c.id ? '目前' : undefined,
+      colorId: c.id,
+    }));
+    items.push({
+      label: '$(history) 自動（依名稱配色）',
+      description: project.color === undefined ? '目前' : undefined,
+      colorId: undefined,
+    });
+    const picked = await vscode.window.showQuickPick(items, {
+      placeHolder: `選擇「${project.name}」的顏色`,
+    });
+    if (picked) {
+      await store.setColor(project.id, picked.colorId);
     }
   });
 

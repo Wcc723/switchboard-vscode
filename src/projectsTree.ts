@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import type { Project, ProjectStore } from './projectStore';
 import type { Session, SessionManager } from './sessionManager';
-import { themeColorForProject } from './colors';
+import { themeColorFor } from './colors';
 
 export class ProjectNode {
   readonly kind = 'project' as const;
@@ -140,7 +140,7 @@ export class ProjectsTreeProvider
 
   private projectItem(node: ProjectNode): vscode.TreeItem {
     const p = node.project;
-    const color = themeColorForProject(p.id);
+    const color = themeColorFor(p);
     const state = node.active ? Expanded : Collapsed;
     const item = new vscode.TreeItem(p.name, state);
     // Encode the desired state into the id so VS Code re-applies it on switch
@@ -186,14 +186,15 @@ export class ProjectsTreeProvider
 
   private sessionItem(node: SessionNode): vscode.TreeItem {
     const s = node.session;
+    const project = this.store.getProject(s.projectId);
+    const color = project
+      ? themeColorFor(project)
+      : new vscode.ThemeColor('terminal.ansiBlue');
     const item = new vscode.TreeItem(s.treeLabel, None);
     item.id = s.id;
     item.contextValue = 'session';
     item.tooltip = s.cwd;
-    item.iconPath = new vscode.ThemeIcon(
-      'terminal',
-      themeColorForProject(s.projectId)
-    );
+    item.iconPath = new vscode.ThemeIcon('terminal', color);
     item.command = {
       command: 'projectSwitch.focusSession',
       title: '聚焦 terminal',

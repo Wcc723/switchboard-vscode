@@ -71,6 +71,12 @@
         "icon": "$(terminal)"
       },
       {
+        "command": "projectSwitch.setColor",
+        "title": "設定專案顏色",
+        "category": "Project Switch",
+        "icon": "$(symbol-color)"
+      },
+      {
         "command": "projectSwitch.renameProject",
         "title": "重新命名專案",
         "category": "Project Switch"
@@ -122,14 +128,19 @@
           "group": "1_session@1"
         },
         {
-          "command": "projectSwitch.renameProject",
+          "command": "projectSwitch.setColor",
           "when": "view == projectSwitch.projects && viewItem == project",
           "group": "2_modify@1"
         },
         {
-          "command": "projectSwitch.removeProject",
+          "command": "projectSwitch.renameProject",
           "when": "view == projectSwitch.projects && viewItem == project",
           "group": "2_modify@2"
+        },
+        {
+          "command": "projectSwitch.removeProject",
+          "when": "view == projectSwitch.projects && viewItem == project",
+          "group": "2_modify@3"
         },
         {
           "command": "projectSwitch.newSession",

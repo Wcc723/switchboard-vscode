@@ -7,6 +7,8 @@ export interface Project {
   name: string;
   /** Absolute filesystem path to the project folder. */
   path: string;
+  /** A palette theme-color id; undefined means auto (hashed from id). */
+  color?: string;
 }
 
 const STORAGE_KEY = 'projectSwitch.projects';
@@ -59,6 +61,15 @@ export class ProjectStore implements vscode.Disposable {
   async renameProject(id: string, name: string): Promise<void> {
     const projects = this.getProjects().map((p) =>
       p.id === id ? { ...p, name } : p
+    );
+    await this.context.globalState.update(STORAGE_KEY, projects);
+    this._onDidChange.fire();
+  }
+
+  /** Set a project's colour (a palette id), or undefined to revert to auto. */
+  async setColor(id: string, color: string | undefined): Promise<void> {
+    const projects = this.getProjects().map((p) =>
+      p.id === id ? { ...p, color } : p
     );
     await this.context.globalState.update(STORAGE_KEY, projects);
     this._onDidChange.fire();

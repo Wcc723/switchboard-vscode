@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import { randomUUID } from 'crypto';
 import type { Project } from './projectStore';
-import { themeColorForProject } from './colors';
+import { themeColorFor } from './colors';
 
 export interface Session {
   id: string;
@@ -51,7 +51,7 @@ export class SessionManager implements vscode.Disposable {
     const treeLabel = `${rel}${suffix}`;
     const name = `${project.name}: ${treeLabel}`;
 
-    const color = themeColorForProject(project.id);
+    const color = themeColorFor(project);
     const terminal = vscode.window.createTerminal({
       name,
       cwd: folder,
@@ -78,6 +78,17 @@ export class SessionManager implements vscode.Disposable {
 
   focusSession(session: Session): void {
     session.terminal.show();
+  }
+
+  /** Find the tracked session backing a given terminal, if any. */
+  findSessionByTerminal(terminal: vscode.Terminal): Session | undefined {
+    for (const list of this.sessions.values()) {
+      const found = list.find((s) => s.terminal === terminal);
+      if (found) {
+        return found;
+      }
+    }
+    return undefined;
   }
 
   /** Focus the newest session of a project, creating one (at root) if none exist. */

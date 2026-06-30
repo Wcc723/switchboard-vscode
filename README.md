@@ -12,6 +12,8 @@ Activity Bar 最左側新增一個 **Projects** 面板：列出你註冊的專�
 - **terminal 群組**：每個專案的 terminal 集中在 TERMINALS 區，名稱標出 cwd（如 `my-app: src`），一鍵開啟 / 聚焦 / 關閉。
 - **檔案瀏覽**：FILES 區是當前專案的檔案樹，點檔開檔；任何資料夾 hover 可「在此開 terminal」（cwd 設在該子目錄）。
 - **切換即展開群組**：點專案會把它的資料夾掛進 multi-root workspace、在 Explorer 聚焦該根、展開它的群組並帶出最近一個 terminal。
+- **自選顏色**：右鍵專案 → 設定專案顏色，從調色盤挑（或改回「自動」依名稱配色）。
+- **與原生終端機列表連動**：在原生終端機分頁點到某個 terminal，Project 面板會自動高亮 / 展開它所屬的專案（VSCode 無法把原生分頁分組成資料夾，故以命名 + 顏色 + 連動整合）。
 - **可設定行為**：
   - `projectSwitch.onProjectClick` — `focusOrStartSession`（預設）/ `focusOnly` / `alwaysNewSession`
   - `projectSwitch.autoStartClaude` — 開 terminal 時是否自動執行 Claude（**預設 `false`**，只開乾淨 terminal）
