@@ -219,9 +219,11 @@ export class ProjectsWebviewProvider
   .session:hover { background: var(--vscode-list-hoverBackground); color: var(--vscode-foreground); }
   .session.active {
     color: var(--vscode-foreground);
-    background: var(--vscode-list-inactiveSelectionBackground);
+    background: color-mix(in srgb, var(--c) 26%, var(--vscode-editor-background));
   }
-  .session.active:hover { background: var(--vscode-list-hoverBackground); }
+  .session.active:hover {
+    background: color-mix(in srgb, var(--c) 34%, var(--vscode-editor-background));
+  }
   .sdot {
     width: 7px; height: 7px; border-radius: 50%;
     background: var(--c); flex: 0 0 auto;
