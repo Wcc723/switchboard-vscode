@@ -6,6 +6,8 @@ import { resolveColorId } from './colors';
 
 export interface WebviewActions {
   addProject(): void;
+  /** Add one or more projects from dropped filesystem paths. */
+  addPaths(paths: string[]): void;
   openProject(projectId: string): void;
   newSession(projectId: string): void;
   focusSession(sessionId: string): void;
@@ -13,6 +15,8 @@ export interface WebviewActions {
   setColor(projectId: string): void;
   renameProject(projectId: string): void;
   removeProject(projectId: string): void;
+  /** Open the "⋯ more" overflow menu (colour / rename / remove). */
+  showMore(projectId: string): void;
 }
 
 /** Maps a theme-color id (e.g. charts.blue) to its webview CSS variable. */
@@ -61,13 +65,23 @@ export class ProjectsWebviewProvider
     this.postState();
   }
 
-  private onMessage(msg: { type: string; id?: string }): void {
+  private onMessage(msg: { type: string; id?: string; paths?: string[] }): void {
     switch (msg?.type) {
       case 'ready':
         this.postState();
         break;
       case 'addProject':
         this.actions.addProject();
+        break;
+      case 'dropFolders':
+        if (msg.paths?.length) this.actions.addPaths(msg.paths);
+        break;
+      case 'dropUnresolved':
+        void vscode.window.showWarningMessage(
+          vscode.l10n.t(
+            "Couldn't read the dropped item's path. Drop the folder onto the Files list below, or use the ＋ Add Project button."
+          )
+        );
         break;
       case 'openProject':
         if (msg.id) this.actions.openProject(msg.id);
@@ -89,6 +103,9 @@ export class ProjectsWebviewProvider
         break;
       case 'remove':
         if (msg.id) this.actions.removeProject(msg.id);
+        break;
+      case 'more':
+        if (msg.id) this.actions.showMore(msg.id);
         break;
     }
   }
@@ -132,6 +149,17 @@ export class ProjectsWebviewProvider
       `script-src 'nonce-${nonce}'`,
     ].join('; ');
 
+    // Localized strings used by the client-side render code.
+    const str = {
+      empty: vscode.l10n.t('No projects yet.'),
+      addProject: vscode.l10n.t('Add Project'),
+      dragHint: vscode.l10n.t('or drag a folder here'),
+      dropHere: vscode.l10n.t('Drop to add as a project'),
+      newTerminal: vscode.l10n.t('New terminal'),
+      more: vscode.l10n.t('More actions'),
+      closeTerminal: vscode.l10n.t('Close terminal'),
+    };
+
     return `<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
@@ -148,7 +176,26 @@ export class ProjectsWebviewProvider
     color: var(--vscode-foreground);
   }
   .empty { padding: 18px 12px; text-align: center; color: var(--vscode-descriptionForeground); }
+  .empty .hint { margin-top: 10px; font-size: 0.9em; opacity: 0.85; }
   button { font-family: inherit; cursor: pointer; }
+
+  /* Drop overlay shown while dragging folders over the panel. */
+  #dropzone {
+    position: fixed; inset: 4px;
+    display: none;
+    flex-direction: column; align-items: center; justify-content: center;
+    gap: 8px;
+    background: color-mix(in srgb, var(--vscode-focusBorder) 12%, transparent);
+    border: 2px dashed var(--vscode-focusBorder);
+    border-radius: 8px;
+    color: var(--vscode-foreground);
+    font-weight: 600;
+    text-align: center;
+    pointer-events: none;
+    z-index: 10;
+  }
+  #dropzone .codicon { font-size: 26px; }
+  body.dragging #dropzone { display: flex; }
   button.primary {
     margin-top: 10px;
     padding: 5px 12px;
@@ -176,17 +223,16 @@ export class ProjectsWebviewProvider
   }
 
   .card-header { display: flex; align-items: center; gap: 7px; }
-  .cdot { width: 9px; height: 9px; border-radius: 50%; background: var(--c); flex: 0 0 auto; }
-  .card:not(.active) .cdot { background: transparent; box-shadow: inset 0 0 0 1.5px var(--c); }
   .name {
     flex: 1 1 auto;
     font-weight: 600;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     cursor: pointer;
   }
+  /* Leading badge: terminal count (replaces the old colour dot). */
   .count {
     flex: 0 0 auto;
-    min-width: 16px;
+    min-width: 18px;
     text-align: center;
     background: color-mix(in srgb, var(--c) 30%, var(--vscode-badge-background));
     color: var(--vscode-badge-foreground);
@@ -194,6 +240,10 @@ export class ProjectsWebviewProvider
     padding: 0 6px;
     font-size: 0.78em;
     font-weight: 700;
+  }
+  .count.running {
+    background: color-mix(in srgb, var(--c) 60%, var(--vscode-badge-background));
+    animation: td-pulse 1.7s ease-in-out infinite;
   }
   .actions { display: flex; gap: 1px; flex: 0 0 auto; opacity: 0; transition: opacity 0.1s ease; }
   .card:hover .actions, .card.active .actions { opacity: 1; }
@@ -230,8 +280,13 @@ export class ProjectsWebviewProvider
     opacity: 0.4; transition: opacity 0.12s ease;
   }
   .session:hover .sdot, .session.active .sdot { opacity: 1; }
+  @keyframes td-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .session.running .sdot {
+    opacity: 1;
+    animation: td-pulse 1.7s ease-in-out infinite;
+  }
+  .session.running .slabel { color: var(--vscode-foreground); font-weight: 600; }
   .smain { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 6px; }
-  .srun { font-size: 12px; flex: 0 0 auto; }
   .slabel { flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .session.active .slabel { font-weight: 600; }
   .scwd { flex: 0 1 auto; opacity: 0.7; font-size: 0.85em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -241,9 +296,12 @@ export class ProjectsWebviewProvider
 </head>
 <body>
 <div id="app"></div>
+<div id="dropzone"><i class="codicon codicon-new-folder"></i><span id="dropText"></span></div>
 <script nonce="${nonce}">
   const vscode = acquireVsCodeApi();
+  const STR = ${JSON.stringify(str)};
   const app = document.getElementById('app');
+  document.getElementById('dropText').textContent = STR.dropHere;
   let projects = [];
 
   window.addEventListener('message', (e) => {
@@ -271,12 +329,11 @@ export class ProjectsWebviewProvider
 
   function sessionRow(s) {
     const row = document.createElement('div');
-    row.className = 'session' + (s.active ? ' active' : '');
+    row.className = 'session' + (s.active ? ' active' : '') + (s.running ? ' running' : '');
     row.addEventListener('click', () => send('focusSession', s.id));
 
     const dot = document.createElement('span'); dot.className = 'sdot';
     const main = document.createElement('span'); main.className = 'smain';
-    if (s.running) main.appendChild(codicon('play')).classList.add('srun');
     const lbl = document.createElement('span'); lbl.className = 'slabel';
     lbl.textContent = s.running || s.label; lbl.title = s.cwd;
     main.appendChild(lbl);
@@ -285,7 +342,7 @@ export class ProjectsWebviewProvider
       cwd.textContent = s.label; cwd.title = s.cwd;
       main.appendChild(cwd);
     }
-    const close = iconBtn('close', '關閉 terminal', (ev) => { ev.stopPropagation(); send('closeSession', s.id); });
+    const close = iconBtn('close', STR.closeTerminal, (ev) => { ev.stopPropagation(); send('closeSession', s.id); });
     close.classList.add('sclose');
 
     row.append(dot, main, close);
@@ -297,28 +354,28 @@ export class ProjectsWebviewProvider
     el.className = 'card' + (p.active ? ' active' : '');
     el.style.setProperty('--proj-color', p.colorVar);
 
+    const running = p.sessions.some((s) => s.running);
+
     const header = document.createElement('div');
     header.className = 'card-header';
-    const dot = document.createElement('span'); dot.className = 'cdot';
+
+    // Leading badge shows the terminal count (replaces the old colour dot).
+    const count = document.createElement('span');
+    count.className = 'count' + (running ? ' running' : '');
+    count.textContent = String(p.sessions.length);
+
     const name = document.createElement('span'); name.className = 'name';
     name.textContent = p.name; name.title = p.path;
     name.addEventListener('click', () => send('openProject', p.id));
-    header.append(dot, name);
 
-    if (p.sessions.length) {
-      const count = document.createElement('span'); count.className = 'count';
-      count.textContent = String(p.sessions.length);
-      header.append(count);
-    }
-
+    // Single row: keep only "＋ new terminal"; the rest go into a "⋯ more" menu.
     const actions = document.createElement('span'); actions.className = 'actions';
     actions.append(
-      iconBtn('add', '開新 terminal', (ev) => { ev.stopPropagation(); send('newSession', p.id); }),
-      iconBtn('symbol-color', '設定顏色', (ev) => { ev.stopPropagation(); send('setColor', p.id); }),
-      iconBtn('edit', '重新命名', (ev) => { ev.stopPropagation(); send('rename', p.id); }),
-      iconBtn('trash', '移除專案', (ev) => { ev.stopPropagation(); send('remove', p.id); })
+      iconBtn('add', STR.newTerminal, (ev) => { ev.stopPropagation(); send('newSession', p.id); }),
+      iconBtn('ellipsis', STR.more, (ev) => { ev.stopPropagation(); send('more', p.id); })
     );
-    header.append(actions);
+
+    header.append(count, name, actions);
     el.append(header);
 
     if (p.sessions.length) {
@@ -335,17 +392,78 @@ export class ProjectsWebviewProvider
       const empty = document.createElement('div');
       empty.className = 'empty';
       const msg = document.createElement('div');
-      msg.textContent = '尚無專案。';
+      msg.textContent = STR.empty;
       const btn = document.createElement('button');
       btn.className = 'primary';
-      btn.textContent = '新增專案';
+      btn.textContent = STR.addProject;
       btn.addEventListener('click', () => send('addProject'));
-      empty.append(msg, btn);
+      const hint = document.createElement('div');
+      hint.className = 'hint';
+      hint.textContent = STR.dragHint;
+      empty.append(msg, btn, hint);
       app.append(empty);
       return;
     }
     projects.forEach((p) => app.append(card(p)));
   }
+
+  // --- Drag & drop: best-effort. Drop a folder onto the card to add it. -------
+  // A webview can only resolve an OS path via the legacy File.path (removed in
+  // newer Electron) or a text/uri-list. When neither yields a path we tell the
+  // user to drop onto the native Files tree instead (the reliable target). The
+  // extension host validates that each path is a directory before adding it.
+  function pathsFromDrop(dt) {
+    const out = [];
+    if (dt && dt.files && dt.files.length) {
+      for (const f of dt.files) { if (f && f.path) out.push(f.path); }
+    }
+    if (!out.length && dt) {
+      const list = dt.getData('text/uri-list') || dt.getData('text/plain') || '';
+      list.split(/\\r?\\n/).forEach((line) => {
+        line = line.trim();
+        if (!line || line.charAt(0) === '#' || line.indexOf('file:') !== 0) return;
+        try {
+          let p = decodeURIComponent(new URL(line).pathname);
+          // On Windows a drive path looks like /C:/... — strip the leading slash.
+          if (/^\\/[a-zA-Z]:\\//.test(p)) p = p.slice(1);
+          out.push(p);
+        } catch (_e) { /* ignore malformed URIs */ }
+      });
+    }
+    return out;
+  }
+
+  let dragDepth = 0;
+  function setDragging(on) { document.body.classList.toggle('dragging', on); }
+
+  window.addEventListener('dragenter', (e) => {
+    e.preventDefault();
+    dragDepth++;
+    setDragging(true);
+  });
+  window.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = 'copy';
+  });
+  window.addEventListener('dragleave', (e) => {
+    e.preventDefault();
+    dragDepth = Math.max(0, dragDepth - 1);
+    if (dragDepth === 0) setDragging(false);
+  });
+  window.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dragDepth = 0;
+    setDragging(false);
+    const dt = e.dataTransfer;
+    const paths = pathsFromDrop(dt);
+    if (paths.length) {
+      vscode.postMessage({ type: 'dropFolders', paths });
+    } else if (dt && dt.files && dt.files.length) {
+      // Something was dropped but we couldn't resolve a filesystem path
+      // (e.g. a VS Code build where File.path is unavailable).
+      vscode.postMessage({ type: 'dropUnresolved' });
+    }
+  });
 
   vscode.postMessage({ type: 'ready' });
 </script>

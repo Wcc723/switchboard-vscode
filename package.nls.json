@@ -1,0 +1,21 @@
+{
+  "description": "Manage multiple terminals (Claude / Codex sessions) across projects in a single VS Code window.",
+  "view.projects.name": "Projects",
+  "view.files.name": "Files",
+  "welcome.files": "Select a project above to browse its files here.\nYou can also drag a folder here to add it as a project.",
+  "command.addProject.title": "Add Project",
+  "command.refresh.title": "Refresh",
+  "command.newSession.title": "New Terminal",
+  "command.openTerminalHere.title": "Open Terminal Here",
+  "command.setColor.title": "Set Project Colour",
+  "command.renameProject.title": "Rename Project",
+  "command.removeProject.title": "Remove Project",
+  "config.onProjectClick.description": "What happens when you click a project in the panel.",
+  "config.addToWorkspace.description": "Add a project's folder to the VS Code workspace when you open it. Off by default to avoid a window reload — adding the first folder to an empty window reloads VS Code (which resets terminals). When off, TermDeck's own Files view and terminals still work, but the native Explorer, Git/SCM panel and global search won't include the folder.",
+  "config.onProjectClick.focusOrStartSession": "Focus an existing terminal, or open a new one if none exist",
+  "config.onProjectClick.focusOnly": "Only focus an existing terminal (don't open a new one)",
+  "config.onProjectClick.alwaysNewSession": "Always open a new terminal on click",
+  "config.autoStartClaude.description": "Whether to automatically run the Claude command when opening a terminal. Off by default — opens a clean terminal; when on, runs the command below.",
+  "config.claudeCommand.description": "The command used to launch Claude Code; you can change it to e.g. `claude --resume`.\n\n(Security: this setting is machine-scoped and cannot be overridden by a workspace `.vscode/settings.json`, preventing a malicious project from injecting commands.)",
+  "capabilities.untrustedWorkspaces.description": "Only runs the command you specify in user/machine settings (claudeCommand is machine-scoped and cannot be overridden by a workspace)."
+}

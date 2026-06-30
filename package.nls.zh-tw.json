@@ -1,0 +1,21 @@
+{
+  "description": "在單一 VSCode 視窗中跨專案管理多個終端機（Claude / Codex 等 session）的控制台",
+  "view.projects.name": "專案",
+  "view.files.name": "檔案",
+  "welcome.files": "從上方專案清單選一個專案，即可在此瀏覽它的檔案。\n你也可以把資料夾拖曳到這裡，將它加入為專案。",
+  "command.addProject.title": "新增專案",
+  "command.refresh.title": "重新整理",
+  "command.newSession.title": "開新 terminal",
+  "command.openTerminalHere.title": "在此資料夾開 terminal",
+  "command.setColor.title": "設定專案顏色",
+  "command.renameProject.title": "重新命名專案",
+  "command.removeProject.title": "移除專案",
+  "config.onProjectClick.description": "在面板點專案時的行為。",
+  "config.addToWorkspace.description": "開啟專案時，是否把它的資料夾加入 VSCode workspace。預設關閉以避免視窗重載——空視窗加入第一個資料夾會讓 VSCode reload（terminal 會被重置）。關閉時 TermDeck 自己的 Files 檢視與 terminal 仍正常，但原生 Explorer、Git/SCM 面板與全域搜尋不會涵蓋該資料夾。",
+  "config.onProjectClick.focusOrStartSession": "聚焦既有 terminal，沒有就開一個新的",
+  "config.onProjectClick.focusOnly": "只聚焦既有 terminal（不自動開新的）",
+  "config.onProjectClick.alwaysNewSession": "每次點都開一個新 terminal",
+  "config.autoStartClaude.description": "開 terminal 時是否自動執行 Claude 指令。預設關閉，只開一個乾淨的 terminal；開啟則會自動跑下方的指令。",
+  "config.claudeCommand.description": "啟動 Claude Code 的指令，可改為 `claude --resume` 等。\n\n（安全考量：此設定為 machine scope，無法被 workspace 的 `.vscode/settings.json` 覆寫，避免惡意專案注入指令。）",
+  "capabilities.untrustedWorkspaces.description": "只執行使用者於 user/machine 設定中指定的指令（claudeCommand 為 machine scope，workspace 無法覆寫）。"
+}

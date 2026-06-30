@@ -1,8 +1,9 @@
 {
   "name": "termdeck",
   "displayName": "TermDeck",
-  "description": "在單一 VSCode 視窗中跨專案管理多個終端機（Claude / Codex 等 session）的控制台",
-  "version": "0.0.2",
+  "description": "%description%",
+  "l10n": "./l10n",
+  "version": "0.0.3",
   "icon": "media/icon.png",
   "publisher": "casper",
   "license": "MIT",
@@ -31,7 +32,7 @@
   "capabilities": {
     "untrustedWorkspaces": {
       "supported": true,
-      "description": "只執行使用者於 user/machine 設定中指定的指令（claudeCommand 為 machine scope，workspace 無法覆寫）。"
+      "description": "%capabilities.untrustedWorkspaces.description%"
     }
   },
   "main": "./dist/extension.js",
@@ -53,60 +54,60 @@
       "projectSwitch": [
         {
           "id": "projectSwitch.projects",
-          "name": "Projects",
+          "name": "%view.projects.name%",
           "type": "webview"
         },
         {
           "id": "projectSwitch.files",
-          "name": "Files"
+          "name": "%view.files.name%"
         }
       ]
     },
     "viewsWelcome": [
       {
         "view": "projectSwitch.files",
-        "contents": "從上方 Projects 選一個專案，即可在此瀏覽它的檔案。"
+        "contents": "%welcome.files%"
       }
     ],
     "commands": [
       {
         "command": "projectSwitch.addProject",
-        "title": "新增專案",
+        "title": "%command.addProject.title%",
         "category": "TermDeck",
         "icon": "$(add)"
       },
       {
         "command": "projectSwitch.refresh",
-        "title": "重新整理",
+        "title": "%command.refresh.title%",
         "category": "TermDeck",
         "icon": "$(refresh)"
       },
       {
         "command": "projectSwitch.newSession",
-        "title": "開新 terminal",
+        "title": "%command.newSession.title%",
         "category": "TermDeck",
         "icon": "$(add)"
       },
       {
         "command": "projectSwitch.openTerminalHere",
-        "title": "在此資料夾開 terminal",
+        "title": "%command.openTerminalHere.title%",
         "category": "TermDeck",
         "icon": "$(terminal)"
       },
       {
         "command": "projectSwitch.setColor",
-        "title": "設定專案顏色",
+        "title": "%command.setColor.title%",
         "category": "TermDeck",
         "icon": "$(symbol-color)"
       },
       {
         "command": "projectSwitch.renameProject",
-        "title": "重新命名專案",
+        "title": "%command.renameProject.title%",
         "category": "TermDeck"
       },
       {
         "command": "projectSwitch.removeProject",
-        "title": "移除專案",
+        "title": "%command.removeProject.title%",
         "category": "TermDeck"
       }
     ],
@@ -142,23 +143,28 @@
             "alwaysNewSession"
           ],
           "enumDescriptions": [
-            "聚焦既有 terminal，沒有就開一個新的",
-            "只聚焦既有 terminal（不自動開新的）",
-            "每次點都開一個新 terminal"
+            "%config.onProjectClick.focusOrStartSession%",
+            "%config.onProjectClick.focusOnly%",
+            "%config.onProjectClick.alwaysNewSession%"
           ],
           "default": "focusOrStartSession",
-          "description": "在面板點專案時的行為。"
+          "description": "%config.onProjectClick.description%"
+        },
+        "projectSwitch.addToWorkspace": {
+          "type": "boolean",
+          "default": false,
+          "description": "%config.addToWorkspace.description%"
         },
         "projectSwitch.autoStartClaude": {
           "type": "boolean",
           "default": false,
-          "description": "開 terminal 時是否自動執行 Claude 指令。預設關閉，只開一個乾淨的 terminal；開啟則會自動跑下方的指令。"
+          "description": "%config.autoStartClaude.description%"
         },
         "projectSwitch.claudeCommand": {
           "type": "string",
           "default": "claude",
           "scope": "machine",
-          "markdownDescription": "啟動 Claude Code 的指令，可改為 `claude --resume` 等。\n\n（安全考量：此設定為 machine scope，無法被 workspace 的 `.vscode/settings.json` 覆寫，避免惡意專案注入指令。）"
+          "markdownDescription": "%config.claudeCommand.description%"
         }
       }
     }

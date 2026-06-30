@@ -15,12 +15,12 @@ export interface PaletteColor {
  * with no explicit colour falls back to a hash of its id.
  */
 export const PALETTE: PaletteColor[] = [
-  { id: 'charts.red', label: '紅 Red', emoji: '🔴' },
-  { id: 'charts.orange', label: '橙 Orange', emoji: '🟠' },
-  { id: 'charts.yellow', label: '黃 Yellow', emoji: '🟡' },
-  { id: 'charts.green', label: '綠 Green', emoji: '🟢' },
-  { id: 'charts.blue', label: '藍 Blue', emoji: '🔵' },
-  { id: 'charts.purple', label: '紫 Purple', emoji: '🟣' },
+  { id: 'charts.red', label: 'Red', emoji: '🔴' },
+  { id: 'charts.orange', label: 'Orange', emoji: '🟠' },
+  { id: 'charts.yellow', label: 'Yellow', emoji: '🟡' },
+  { id: 'charts.green', label: 'Green', emoji: '🟢' },
+  { id: 'charts.blue', label: 'Blue', emoji: '🔵' },
+  { id: 'charts.purple', label: 'Purple', emoji: '🟣' },
 ];
 
 interface Colorable {

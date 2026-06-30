@@ -52,7 +52,7 @@ export class FilesTreeProvider
     if (!isDir) {
       item.command = {
         command: 'vscode.open',
-        title: '開啟檔案',
+        title: vscode.l10n.t('Open File'),
         arguments: [node.uri],
       };
     }
