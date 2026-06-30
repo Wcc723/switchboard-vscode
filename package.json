@@ -8,12 +8,12 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/casper/switchboard-vscode.git"
+    "url": "https://github.com/wcc723/switchboard-vscode.git"
   },
   "bugs": {
-    "url": "https://github.com/casper/switchboard-vscode/issues"
+    "url": "https://github.com/wcc723/switchboard-vscode/issues"
   },
-  "homepage": "https://github.com/casper/switchboard-vscode#readme",
+  "homepage": "https://github.com/wcc723/switchboard-vscode#readme",
   "engines": {
     "vscode": "^1.93.0"
   },
