@@ -20,10 +20,26 @@ export class ProjectDecorationProvider
   readonly onDidChangeFileDecorations = this._onDidChange.event;
   private readonly disposables: vscode.Disposable[] = [];
 
+  // provideFileDecoration is a hot path (called per visible file), so cache the
+  // project list sorted by path length desc; rebuild only when projects change.
+  private cache: Project[] | undefined;
+
   constructor(private readonly store: ProjectStore) {
     this.disposables.push(
-      store.onDidChange(() => this._onDidChange.fire(undefined))
+      store.onDidChange(() => {
+        this.cache = undefined;
+        this._onDidChange.fire(undefined);
+      })
     );
+  }
+
+  private projectsByDepth(): Project[] {
+    if (!this.cache) {
+      this.cache = [...this.store.getProjects()].sort(
+        (a, b) => b.path.length - a.path.length
+      );
+    }
+    return this.cache;
   }
 
   provideFileDecoration(uri: vscode.Uri): vscode.FileDecoration | undefined {
@@ -41,10 +57,9 @@ export class ProjectDecorationProvider
   /** The deepest registered project whose folder contains this uri. */
   private owningProject(uri: vscode.Uri): Project | undefined {
     const path = uri.fsPath;
-    return this.store
-      .getProjects()
-      .filter((p) => path === p.path || path.startsWith(p.path + sep))
-      .sort((a, b) => b.path.length - a.path.length)[0];
+    return this.projectsByDepth().find(
+      (p) => path === p.path || path.startsWith(p.path + sep)
+    );
   }
 
   dispose(): void {

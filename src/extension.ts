@@ -151,10 +151,17 @@ export function activate(context: vscode.ExtensionContext): void {
     },
   };
 
+  const webviewProvider = new ProjectsWebviewProvider(
+    context.extensionUri,
+    store,
+    sessions,
+    actions
+  );
   context.subscriptions.push(
+    webviewProvider,
     vscode.window.registerWebviewViewProvider(
       ProjectsWebviewProvider.viewType,
-      new ProjectsWebviewProvider(context.extensionUri, store, sessions, actions),
+      webviewProvider,
       { webviewOptions: { retainContextWhenHidden: true } }
     )
   );
@@ -179,7 +186,7 @@ export function activate(context: vscode.ExtensionContext): void {
     const running = session?.runningCommand ? ` · ${session.runningCommand}` : '';
     statusBar.text = `${emojiFor(project)} ${project.name}${running}`;
     statusBar.color = themeColorFor(project);
-    statusBar.tooltip = `Project Switch — ${project.path}`;
+    statusBar.tooltip = `Switchboard — ${project.path}`;
     statusBar.show();
   };
 

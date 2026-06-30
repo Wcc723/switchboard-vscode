@@ -12,6 +12,20 @@
   "categories": [
     "Other"
   ],
+  "keywords": [
+    "terminal",
+    "claude",
+    "codex",
+    "project",
+    "multi-root",
+    "session manager"
+  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": true,
+      "description": "只執行使用者於 user/machine 設定中指定的指令（claudeCommand 為 machine scope，workspace 無法覆寫）。"
+    }
+  },
   "main": "./dist/extension.js",
   "activationEvents": [
     "onView:projectSwitch.projects",
@@ -135,7 +149,8 @@
         "projectSwitch.claudeCommand": {
           "type": "string",
           "default": "claude",
-          "description": "啟動 Claude Code 的指令，可改為 'claude --resume' 等。"
+          "scope": "machine",
+          "markdownDescription": "啟動 Claude Code 的指令，可改為 `claude --resume` 等。\n\n（安全考量：此設定為 machine scope，無法被 workspace 的 `.vscode/settings.json` 覆寫，避免惡意專案注入指令。）"
         }
       }
     }
