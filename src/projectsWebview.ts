@@ -219,9 +219,11 @@ export class ProjectsWebviewProvider
   .session:hover { opacity: 0.85; background: var(--vscode-list-hoverBackground); }
   .session.active {
     opacity: 1;
-    background: color-mix(in srgb, var(--c) 14%, transparent);
+    background: transparent;
+    border-radius: 0;
     box-shadow: inset 2px 0 0 var(--c);
   }
+  .session.active:hover { background: var(--vscode-list-hoverBackground); }
   .sdot { width: 6px; height: 6px; border-radius: 50%; background: var(--c); flex: 0 0 auto; }
   .smain { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 6px; }
   .srun { font-size: 12px; flex: 0 0 auto; opacity: 0.8; }

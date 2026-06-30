@@ -3,6 +3,7 @@
   "displayName": "Switchboard",
   "description": "在單一 VSCode 視窗中跨專案管理多個終端機（Claude / Codex 等 session）的控制台",
   "version": "0.0.1",
+  "icon": "media/icon.png",
   "publisher": "casper",
   "license": "MIT",
   "engines": {
