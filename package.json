@@ -1,0 +1,196 @@
+{
+  "name": "project-switch",
+  "displayName": "Project Switch",
+  "description": "單一視窗管理多個專案與多個 Claude Code session 的駕駛艙",
+  "version": "0.0.1",
+  "publisher": "casper",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onView:projectSwitch.projects"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "projectSwitch",
+          "title": "Projects",
+          "icon": "media/projects.svg"
+        }
+      ]
+    },
+    "views": {
+      "projectSwitch": [
+        {
+          "id": "projectSwitch.projects",
+          "name": "Projects"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "projectSwitch.projects",
+        "contents": "尚未加入任何專案。\n[新增專案](command:projectSwitch.addProject)\n\n加入後，點專案即可切換並展開 / 聚焦它的 terminal 群組。"
+      }
+    ],
+    "commands": [
+      {
+        "command": "projectSwitch.addProject",
+        "title": "新增專案",
+        "category": "Project Switch",
+        "icon": "$(add)"
+      },
+      {
+        "command": "projectSwitch.refresh",
+        "title": "重新整理",
+        "category": "Project Switch",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "projectSwitch.openProject",
+        "title": "切換 / 聚焦專案",
+        "category": "Project Switch",
+        "icon": "$(arrow-right)"
+      },
+      {
+        "command": "projectSwitch.newSession",
+        "title": "開新 terminal",
+        "category": "Project Switch",
+        "icon": "$(add)"
+      },
+      {
+        "command": "projectSwitch.openTerminalHere",
+        "title": "在此資料夾開 terminal",
+        "category": "Project Switch",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "projectSwitch.renameProject",
+        "title": "重新命名專案",
+        "category": "Project Switch"
+      },
+      {
+        "command": "projectSwitch.removeProject",
+        "title": "移除專案",
+        "category": "Project Switch"
+      },
+      {
+        "command": "projectSwitch.focusSession",
+        "title": "聚焦 terminal",
+        "category": "Project Switch"
+      },
+      {
+        "command": "projectSwitch.closeSession",
+        "title": "關閉 terminal",
+        "category": "Project Switch",
+        "icon": "$(trash)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "projectSwitch.addProject",
+          "when": "view == projectSwitch.projects",
+          "group": "navigation@1"
+        },
+        {
+          "command": "projectSwitch.refresh",
+          "when": "view == projectSwitch.projects",
+          "group": "navigation@2"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "projectSwitch.openProject",
+          "when": "view == projectSwitch.projects && viewItem == project",
+          "group": "inline@0"
+        },
+        {
+          "command": "projectSwitch.newSession",
+          "when": "view == projectSwitch.projects && viewItem == project",
+          "group": "inline@1"
+        },
+        {
+          "command": "projectSwitch.newSession",
+          "when": "view == projectSwitch.projects && viewItem == project",
+          "group": "1_session@1"
+        },
+        {
+          "command": "projectSwitch.renameProject",
+          "when": "view == projectSwitch.projects && viewItem == project",
+          "group": "2_modify@1"
+        },
+        {
+          "command": "projectSwitch.removeProject",
+          "when": "view == projectSwitch.projects && viewItem == project",
+          "group": "2_modify@2"
+        },
+        {
+          "command": "projectSwitch.newSession",
+          "when": "view == projectSwitch.projects && viewItem == terminalsCategory",
+          "group": "inline@0"
+        },
+        {
+          "command": "projectSwitch.openTerminalHere",
+          "when": "view == projectSwitch.projects && viewItem == folder",
+          "group": "inline@0"
+        },
+        {
+          "command": "projectSwitch.closeSession",
+          "when": "view == projectSwitch.projects && viewItem == session",
+          "group": "inline@0"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Project Switch",
+      "properties": {
+        "projectSwitch.onProjectClick": {
+          "type": "string",
+          "enum": [
+            "focusOrStartSession",
+            "focusOnly",
+            "alwaysNewSession"
+          ],
+          "enumDescriptions": [
+            "聚焦既有 terminal，沒有就開一個新的",
+            "只聚焦既有 terminal（不自動開新的）",
+            "每次點都開一個新 terminal"
+          ],
+          "default": "focusOrStartSession",
+          "description": "在面板點專案時的行為。"
+        },
+        "projectSwitch.autoStartClaude": {
+          "type": "boolean",
+          "default": false,
+          "description": "開 terminal 時是否自動執行 Claude 指令。預設關閉，只開一個乾淨的 terminal；開啟則會自動跑下方的指令。"
+        },
+        "projectSwitch.claudeCommand": {
+          "type": "string",
+          "default": "claude",
+          "description": "啟動 Claude Code 的指令，可改為 'claude --resume' 等。"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run build",
+    "build": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "compile": "tsc --noEmit -p ./",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^2.24.0",
+    "esbuild": "^0.20.2",
+    "typescript": "^5.4.5"
+  }
+}
