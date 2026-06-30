@@ -11,7 +11,7 @@ import {
   ensureFolderInWorkspace,
   removeFolderFromWorkspace,
 } from './workspaceFolders';
-import { PALETTE } from './colors';
+import { PALETTE, emojiFor, themeColorFor } from './colors';
 
 export function activate(context: vscode.ExtensionContext): void {
   const store = new ProjectStore(context);
@@ -165,19 +165,45 @@ export function activate(context: vscode.ExtensionContext): void {
     )
   );
 
+  // A status-bar chip showing which project the active terminal belongs to.
+  // (The terminal viewport itself is xterm-owned; an extension can't draw a
+  // band there, so this is the always-visible "which project" indicator.)
+  const statusBar = vscode.window.createStatusBarItem(
+    vscode.StatusBarAlignment.Left,
+    100
+  );
+  context.subscriptions.push(statusBar);
+
+  const updateStatusBar = (terminal?: vscode.Terminal): void => {
+    const term = terminal ?? vscode.window.activeTerminal;
+    const session = term ? sessions.findSessionByTerminal(term) : undefined;
+    const project = session ? store.getProject(session.projectId) : undefined;
+    if (!project) {
+      statusBar.hide();
+      return;
+    }
+    const running = session?.runningCommand ? ` · ${session.runningCommand}` : '';
+    statusBar.text = `${emojiFor(project)} ${project.name}${running}`;
+    statusBar.color = themeColorFor(project);
+    statusBar.tooltip = `Project Switch — ${project.path}`;
+    statusBar.show();
+  };
+
   // Integrate with the native terminal list: focusing one of our terminals
-  // (anywhere) marks its project active, so the panel highlights it.
+  // (anywhere) marks its project active and updates the status-bar chip.
   context.subscriptions.push(
     vscode.window.onDidChangeActiveTerminal((terminal) => {
-      if (!terminal) {
-        return;
-      }
-      const session = sessions.findSessionByTerminal(terminal);
+      const session = terminal
+        ? sessions.findSessionByTerminal(terminal)
+        : undefined;
       if (session) {
         store.setActive(session.projectId);
       }
-    })
+      updateStatusBar(terminal);
+    }),
+    sessions.onDidChange(() => updateStatusBar())
   );
+  updateStatusBar();
 
   // --- Commands (palette + FILES tree menus) ---------------------------------
 

@@ -20,7 +20,8 @@ Activity Bar 最左側新增一個容器，內含兩個面板：
 - **自選顏色**：設定專案顏色（卡片動作按鈕或指令），六色調色盤 🔴🟠🟡🟢🔵🟣，或改回「自動」依名稱配色。
 - **檔案以色圓點標示（不染文字）**：每個專案底下的檔案會在右側顯示該專案的 emoji 色圓點（Files 樹、原生 Explorer、編輯器分頁都會），一眼分辨檔案屬於哪個專案，但不改變檔名文字顏色。
   - 編輯器分頁要看到圓點，需開啟設定 `workbench.editor.decorations.badges: true`（預設開啟）。
-- **與原生終端機列表連動**：在原生終端機分頁點到某個 terminal，Project 面板會自動高亮 / 展開它所屬的專案（VSCode 無法把原生分頁分組成資料夾，故以命名 + 顏色 + 連動整合）。
+- **與原生終端機列表連動**：在原生終端機分頁點到某個 terminal，Project 面板會自動高亮它所屬的專案（VSCode 無法把原生分頁分組成資料夾，故以命名 + 顏色 + 連動整合）。
+- **狀態列指示器**：底部狀態列顯示當前 terminal 所屬專案的彩色晶片「🔵 專案名 · claude」，跟著聚焦的 terminal 即時切換（終端機內容區由 xterm 渲染、無法加色帶，故以狀態列指示）。
 - **可設定行為**：
   - `projectSwitch.onProjectClick` — `focusOrStartSession`（預設）/ `focusOnly` / `alwaysNewSession`
   - `projectSwitch.autoStartClaude` — 開 terminal 時是否自動執行 Claude（**預設 `false`**，只開乾淨 terminal）
