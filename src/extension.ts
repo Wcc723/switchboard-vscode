@@ -13,12 +13,17 @@ import {
   removeFolderFromWorkspace,
 } from './workspaceFolders';
 import { PALETTE } from './colors';
+import { ProjectDecorationProvider } from './fileDecorations';
 
 export function activate(context: vscode.ExtensionContext): void {
   const store = new ProjectStore(context);
   const sessions = new SessionManager(context);
   const tree = new ProjectsTreeProvider(store, sessions);
-  context.subscriptions.push(store, sessions, tree);
+  const decorations = new ProjectDecorationProvider(store, sessions);
+  context.subscriptions.push(store, sessions, tree, decorations);
+  context.subscriptions.push(
+    vscode.window.registerFileDecorationProvider(decorations)
+  );
 
   context.subscriptions.push(
     vscode.window.createTreeView('projectSwitch.projects', {

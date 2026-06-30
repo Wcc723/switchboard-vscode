@@ -148,6 +148,9 @@ export class ProjectsTreeProvider
     item.id = `${p.id}:${state}`;
     item.contextValue = 'project';
     item.tooltip = p.path;
+    // resourceUri lets the FileDecorationProvider tint this row in the project
+    // colour (explicit label + iconPath below still take precedence).
+    item.resourceUri = vscode.Uri.file(p.path);
     item.iconPath = new vscode.ThemeIcon(
       node.active ? 'circle-large-filled' : 'folder',
       color
