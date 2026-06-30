@@ -1,6 +1,6 @@
-# Project Switch
+# Switchboard
 
-在同一個 VSCode 視窗裡管理多個專案，以及每個專案的多個 Claude Code session。
+在同一個 VSCode 視窗裡跨專案管理多個終端機（Claude / Codex 等 session）——一個專案 × 多個終端機的控制台。
 
 Activity Bar 最左側新增一個容器，內含兩個面板：
 
