@@ -47,17 +47,11 @@ export function activate(context: vscode.ExtensionContext): void {
     }
   }
 
-  async function openProject(project: Project): Promise<void> {
+  function openProject(project: Project): void {
     store.setActive(project.id);
     ensureFolderInWorkspace(project.path);
-    try {
-      await vscode.commands.executeCommand(
-        'revealInExplorer',
-        vscode.Uri.file(project.path)
-      );
-    } catch {
-      // Explorer may be unavailable; ignore.
-    }
+    // Note: deliberately does NOT reveal in the native Explorer — clicking a
+    // project should not steal focus to the file explorer.
     const mode = vscode.workspace
       .getConfiguration('projectSwitch')
       .get<string>('onProjectClick', 'focusOrStartSession');
@@ -160,7 +154,7 @@ export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
     vscode.window.registerWebviewViewProvider(
       ProjectsWebviewProvider.viewType,
-      new ProjectsWebviewProvider(store, sessions, actions),
+      new ProjectsWebviewProvider(context.extensionUri, store, sessions, actions),
       { webviewOptions: { retainContextWhenHidden: true } }
     )
   );

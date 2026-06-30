@@ -16,7 +16,9 @@ Activity Bar 最左側新增一個容器，內含兩個面板：
   - **顯示執行中的指令**：跑 `claude` / `codex` 等時，卡片內該 terminal 的標籤會變成指令名稱（cwd 退為灰字），結束後還原。需 VSCode shell integration 啟用（bash/zsh/pwsh/fish 預設開）。
   - **分頁色帶**：原生終端機分頁名稱前帶該專案的 emoji 色圓點（如 `🔵 my-app: src`）+ 圖示染色，標示所屬群組。
 - **檔案瀏覽**：Files 面板是當前專案的檔案樹，點檔開檔；任何資料夾 hover 可「在此開 terminal」（cwd 設在該子目錄）。
-- **切換即聚焦**：點專案卡片會把它的資料夾掛進 multi-root workspace、在 Explorer 聚焦該根、帶出最近一個 terminal，Files 面板也切到該專案。
+- **切換即聚焦**：點專案卡片會把它的資料夾掛進 multi-root workspace、帶出最近一個 terminal，Files 面板也切到該專案（**不會搶焦點跳到檔案總管**）。
+- **啟用的 terminal 強調**：目前聚焦的 terminal 在卡片內會高亮（左側色條 + 不透明），其餘淡化，方便辨識。
+- **介面**：卡片動作用 codicon SVG 圖示（非 emoji）；關閉鈕固定靠右。
 - **自選顏色**：設定專案顏色（卡片動作按鈕或指令），六色調色盤 🔴🟠🟡🟢🔵🟣，或改回「自動」依名稱配色。
 - **檔案以色圓點標示（不染文字）**：每個專案底下的檔案會在右側顯示該專案的 emoji 色圓點（Files 樹、原生 Explorer、編輯器分頁都會），一眼分辨檔案屬於哪個專案，但不改變檔名文字顏色。
   - 編輯器分頁要看到圓點，需開啟設定 `workbench.editor.decorations.badges: true`（預設開啟）。

@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { randomUUID } from 'crypto';
 import type { ProjectStore } from './projectStore';
 import type { SessionManager } from './sessionManager';
-import { resolveColorId, emojiFor } from './colors';
+import { resolveColorId } from './colors';
 
 export interface WebviewActions {
   addProject(): void;
@@ -15,15 +15,15 @@ export interface WebviewActions {
   removeProject(projectId: string): void;
 }
 
-/** Maps a theme-color id (e.g. terminal.ansiBlue) to its webview CSS variable. */
+/** Maps a theme-color id (e.g. charts.blue) to its webview CSS variable. */
 function cssVar(colorId: string): string {
   return `var(--vscode-${colorId.replace(/\./g, '-')})`;
 }
 
 /**
  * The Projects panel, rendered as a webview so each project can have a real
- * background colour block, a separator line, and a styled terminal group —
- * none of which a native TreeView can express.
+ * background colour block and a styled terminal group. Icons use the bundled
+ * codicon font (real SVG glyphs, not emoji).
  */
 export class ProjectsWebviewProvider
   implements vscode.WebviewViewProvider, vscode.Disposable
@@ -34,19 +34,24 @@ export class ProjectsWebviewProvider
   private readonly disposables: vscode.Disposable[] = [];
 
   constructor(
+    private readonly extensionUri: vscode.Uri,
     private readonly store: ProjectStore,
     private readonly sessions: SessionManager,
     private readonly actions: WebviewActions
   ) {
     this.disposables.push(
       store.onDidChange(() => this.postState()),
-      sessions.onDidChange(() => this.postState())
+      sessions.onDidChange(() => this.postState()),
+      vscode.window.onDidChangeActiveTerminal(() => this.postState())
     );
   }
 
   resolveWebviewView(view: vscode.WebviewView): void {
     this.view = view;
-    view.webview.options = { enableScripts: true };
+    view.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [vscode.Uri.joinPath(this.extensionUri, 'dist')],
+    };
     view.webview.html = this.html(view.webview);
     view.webview.onDidReceiveMessage(
       (msg) => this.onMessage(msg),
@@ -93,18 +98,23 @@ export class ProjectsWebviewProvider
       return;
     }
     const activeId = this.store.activeProjectId;
+    const activeTerminal = vscode.window.activeTerminal;
+    const activeSession = activeTerminal
+      ? this.sessions.findSessionByTerminal(activeTerminal)
+      : undefined;
+
     const projects = this.store.getProjects().map((p) => ({
       id: p.id,
       name: p.name,
       path: p.path,
       colorVar: cssVar(resolveColorId(p)),
-      emoji: emojiFor(p),
       active: p.id === activeId,
       sessions: this.sessions.getSessions(p.id).map((s) => ({
         id: s.id,
         label: s.treeLabel,
         cwd: s.cwd,
         running: s.runningCommand,
+        active: s.id === activeSession?.id,
       })),
     }));
     void this.view.webview.postMessage({ type: 'state', projects });
@@ -112,9 +122,13 @@ export class ProjectsWebviewProvider
 
   private html(webview: vscode.Webview): string {
     const nonce = randomUUID().replace(/-/g, '');
+    const codiconUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.extensionUri, 'dist', 'codicon.css')
+    );
     const csp = [
       `default-src 'none'`,
       `style-src ${webview.cspSource} 'unsafe-inline'`,
+      `font-src ${webview.cspSource}`,
       `script-src 'nonce-${nonce}'`,
     ].join('; ');
 
@@ -124,26 +138,20 @@ export class ProjectsWebviewProvider
 <meta charset="UTF-8" />
 <meta http-equiv="Content-Security-Policy" content="${csp}" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link href="${codiconUri}" rel="stylesheet" />
 <style>
   body {
-    padding: 6px 4px;
+    padding: 8px 6px;
     margin: 0;
     font-family: var(--vscode-font-family);
     font-size: var(--vscode-font-size);
     color: var(--vscode-foreground);
   }
-  .empty {
-    padding: 16px 12px;
-    text-align: center;
-    color: var(--vscode-descriptionForeground);
-  }
-  button {
-    font-family: inherit;
-    cursor: pointer;
-  }
+  .empty { padding: 18px 12px; text-align: center; color: var(--vscode-descriptionForeground); }
+  button { font-family: inherit; cursor: pointer; }
   button.primary {
-    margin-top: 8px;
-    padding: 4px 10px;
+    margin-top: 10px;
+    padding: 5px 12px;
     border: none;
     border-radius: 4px;
     color: var(--vscode-button-foreground);
@@ -154,70 +162,74 @@ export class ProjectsWebviewProvider
   .card {
     --c: var(--proj-color, var(--vscode-foreground));
     position: relative;
-    border-left: 4px solid var(--c);
-    border-radius: 4px;
-    padding: 6px 8px;
-    margin: 0 2px;
-    background: color-mix(in srgb, var(--c) 10%, transparent);
+    border-left: 3px solid var(--c);
+    border-radius: 6px;
+    padding: 7px 9px;
+    margin: 0 2px 8px;
+    background: color-mix(in srgb, var(--c) 8%, transparent);
+    transition: background 0.12s ease;
   }
+  .card:hover { background: color-mix(in srgb, var(--c) 13%, transparent); }
   .card.active {
-    background: color-mix(in srgb, var(--c) 22%, transparent);
-    outline: 1px solid color-mix(in srgb, var(--c) 55%, transparent);
+    background: color-mix(in srgb, var(--c) 18%, transparent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--c) 45%, transparent);
   }
-  hr.sep {
-    border: 0;
-    border-top: 1px solid var(--vscode-panel-border, rgba(128,128,128,0.35));
-    margin: 8px 6px;
-  }
-  .card-header {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .card-header .name { cursor: pointer; }
-  .dot {
-    flex: 0 0 auto;
-    font-size: 0.85em;
-    line-height: 1;
-  }
-  .name { font-weight: 600; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .badge {
-    flex: 0 0 auto;
-    background: var(--c);
-    color: var(--vscode-editor-background);
-    border-radius: 9px;
-    padding: 0 6px;
-    font-size: 0.75em;
-    font-weight: 700;
-  }
-  .actions { display: flex; gap: 1px; opacity: 0; flex: 0 0 auto; }
-  .card:hover .actions { opacity: 1; }
-  button.icon {
-    border: none;
-    background: transparent;
-    color: var(--vscode-icon-foreground, var(--vscode-foreground));
-    padding: 2px 3px;
-    border-radius: 3px;
-    line-height: 1;
-  }
-  button.icon:hover { background: var(--vscode-toolbar-hoverBackground, rgba(128,128,128,0.2)); }
 
-  .sessions { margin: 4px 0 0 6px; display: flex; flex-direction: column; gap: 1px; }
-  .session {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 2px 4px;
-    border-radius: 3px;
+  .card-header { display: flex; align-items: center; gap: 7px; }
+  .cdot { width: 9px; height: 9px; border-radius: 50%; background: var(--c); flex: 0 0 auto; }
+  .card:not(.active) .cdot { background: transparent; box-shadow: inset 0 0 0 1.5px var(--c); }
+  .name {
+    flex: 1 1 auto;
+    font-weight: 600;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     cursor: pointer;
   }
-  .session:hover { background: var(--vscode-list-hoverBackground); }
+  .count {
+    flex: 0 0 auto;
+    min-width: 16px;
+    text-align: center;
+    background: color-mix(in srgb, var(--c) 30%, var(--vscode-badge-background));
+    color: var(--vscode-badge-foreground);
+    border-radius: 9px;
+    padding: 0 6px;
+    font-size: 0.78em;
+    font-weight: 700;
+  }
+  .actions { display: flex; gap: 1px; flex: 0 0 auto; opacity: 0; transition: opacity 0.1s ease; }
+  .card:hover .actions, .card.active .actions { opacity: 1; }
+  button.icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 22px; height: 22px;
+    border: none; background: transparent;
+    color: var(--vscode-icon-foreground, var(--vscode-foreground));
+    border-radius: 4px;
+  }
+  button.icon:hover { background: var(--vscode-toolbar-hoverBackground, rgba(128,128,128,0.18)); }
+  button.icon .codicon { font-size: 15px; }
+
+  .sessions { margin: 6px 0 1px; display: flex; flex-direction: column; gap: 1px; }
+  .session {
+    display: flex; align-items: center; gap: 6px;
+    padding: 3px 3px 3px 6px;
+    border-radius: 4px;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 0.1s ease, background 0.1s ease;
+  }
+  .session:hover { opacity: 0.85; background: var(--vscode-list-hoverBackground); }
+  .session.active {
+    opacity: 1;
+    background: color-mix(in srgb, var(--c) 14%, transparent);
+    box-shadow: inset 2px 0 0 var(--c);
+  }
   .sdot { width: 6px; height: 6px; border-radius: 50%; background: var(--c); flex: 0 0 auto; }
+  .smain { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 6px; }
+  .srun { font-size: 12px; flex: 0 0 auto; opacity: 0.8; }
   .slabel { flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .running { font-weight: 600; }
-  .scwd { flex: 1 1 auto; opacity: 0.6; font-size: 0.85em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .sclose { opacity: 0; }
-  .session:hover .sclose { opacity: 1; }
+  .session.active .slabel { font-weight: 600; }
+  .scwd { flex: 0 1 auto; opacity: 0.6; font-size: 0.85em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sclose { flex: 0 0 auto; opacity: 0; width: 20px; height: 20px; }
+  .session:hover .sclose { opacity: 0.85; }
 </style>
 </head>
 <body>
@@ -236,35 +248,40 @@ export class ProjectsWebviewProvider
 
   function send(type, id) { vscode.postMessage({ type, id }); }
 
-  function iconBtn(text, title, on) {
+  function codicon(name) {
+    const i = document.createElement('i');
+    i.className = 'codicon codicon-' + name;
+    return i;
+  }
+  function iconBtn(name, title, on) {
     const b = document.createElement('button');
     b.className = 'icon';
-    b.textContent = text;
     b.title = title;
+    b.appendChild(codicon(name));
     b.addEventListener('click', on);
     return b;
   }
 
   function sessionRow(s) {
     const row = document.createElement('div');
-    row.className = 'session';
+    row.className = 'session' + (s.active ? ' active' : '');
     row.addEventListener('click', () => send('focusSession', s.id));
+
     const dot = document.createElement('span'); dot.className = 'sdot';
+    const main = document.createElement('span'); main.className = 'smain';
+    if (s.running) main.appendChild(codicon('play')).classList.add('srun');
     const lbl = document.createElement('span'); lbl.className = 'slabel';
-    // Show the running command (claude / codex / ...) when known, with the
-    // cwd kept as a muted suffix; otherwise just the cwd.
-    lbl.textContent = s.running || s.label;
-    if (s.running) lbl.classList.add('running');
-    lbl.title = s.cwd;
-    const close = iconBtn('✕', '關閉 terminal', (ev) => { ev.stopPropagation(); send('closeSession', s.id); });
-    close.className = 'icon sclose';
-    row.append(dot, lbl);
+    lbl.textContent = s.running || s.label; lbl.title = s.cwd;
+    main.appendChild(lbl);
     if (s.running) {
       const cwd = document.createElement('span'); cwd.className = 'scwd';
       cwd.textContent = s.label; cwd.title = s.cwd;
-      row.append(cwd);
+      main.appendChild(cwd);
     }
-    row.append(close);
+    const close = iconBtn('close', '關閉 terminal', (ev) => { ev.stopPropagation(); send('closeSession', s.id); });
+    close.classList.add('sclose');
+
+    row.append(dot, main, close);
     return row;
   }
 
@@ -275,25 +292,24 @@ export class ProjectsWebviewProvider
 
     const header = document.createElement('div');
     header.className = 'card-header';
-    const dot = document.createElement('span'); dot.className = 'dot';
-    dot.textContent = p.emoji || '';
+    const dot = document.createElement('span'); dot.className = 'cdot';
     const name = document.createElement('span'); name.className = 'name';
     name.textContent = p.name; name.title = p.path;
     name.addEventListener('click', () => send('openProject', p.id));
     header.append(dot, name);
 
     if (p.sessions.length) {
-      const badge = document.createElement('span'); badge.className = 'badge';
-      badge.textContent = String(p.sessions.length);
-      header.append(badge);
+      const count = document.createElement('span'); count.className = 'count';
+      count.textContent = String(p.sessions.length);
+      header.append(count);
     }
 
     const actions = document.createElement('span'); actions.className = 'actions';
     actions.append(
-      iconBtn('＋', '開新 terminal', (ev) => { ev.stopPropagation(); send('newSession', p.id); }),
-      iconBtn('🎨', '設定顏色', (ev) => { ev.stopPropagation(); send('setColor', p.id); }),
-      iconBtn('✎', '重新命名', (ev) => { ev.stopPropagation(); send('rename', p.id); }),
-      iconBtn('🗑', '移除專案', (ev) => { ev.stopPropagation(); send('remove', p.id); })
+      iconBtn('add', '開新 terminal', (ev) => { ev.stopPropagation(); send('newSession', p.id); }),
+      iconBtn('symbol-color', '設定顏色', (ev) => { ev.stopPropagation(); send('setColor', p.id); }),
+      iconBtn('edit', '重新命名', (ev) => { ev.stopPropagation(); send('rename', p.id); }),
+      iconBtn('trash', '移除專案', (ev) => { ev.stopPropagation(); send('remove', p.id); })
     );
     header.append(actions);
     el.append(header);
@@ -315,19 +331,13 @@ export class ProjectsWebviewProvider
       msg.textContent = '尚無專案。';
       const btn = document.createElement('button');
       btn.className = 'primary';
-      btn.textContent = '＋ 新增專案';
+      btn.textContent = '新增專案';
       btn.addEventListener('click', () => send('addProject'));
       empty.append(msg, btn);
       app.append(empty);
       return;
     }
-    projects.forEach((p, i) => {
-      if (i > 0) {
-        const hr = document.createElement('hr'); hr.className = 'sep';
-        app.append(hr);
-      }
-      app.append(card(p));
-    });
+    projects.forEach((p) => app.append(card(p)));
   }
 
   vscode.postMessage({ type: 'ready' });

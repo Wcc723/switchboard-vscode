@@ -1,6 +1,15 @@
 const esbuild = require('esbuild');
+const fs = require('fs');
 
 const watch = process.argv.includes('--watch');
+
+/** Copy the codicon font + css into dist so the webview can load real icons. */
+function copyCodicons() {
+  fs.mkdirSync('dist', { recursive: true });
+  const from = 'node_modules/@vscode/codicons/dist';
+  fs.copyFileSync(`${from}/codicon.css`, 'dist/codicon.css');
+  fs.copyFileSync(`${from}/codicon.ttf`, 'dist/codicon.ttf');
+}
 
 /** Emit markers the VS Code `$esbuild-watch`-style problem matcher can latch onto. */
 const problemMatcherPlugin = {
@@ -33,6 +42,7 @@ const options = {
 };
 
 async function main() {
+  copyCodicons();
   if (watch) {
     const ctx = await esbuild.context(options);
     await ctx.watch();
