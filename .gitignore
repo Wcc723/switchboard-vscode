@@ -1,6 +1,4 @@
 node_modules/
 dist/
 *.vsix
-
-# Scratch note files accidentally saved into the project folder
 Untitled-*
